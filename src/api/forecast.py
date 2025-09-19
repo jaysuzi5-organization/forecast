@@ -39,7 +39,7 @@ def get_latest_forecasts(
         forecast_records = (
             db.query(Forecast)
             .filter(Forecast.collection_time == latest_time)
-            .order_by(Forecast.name)  # "order by 2" → assuming 2nd column is name
+            .order_by(Forecast.forecast_date)
             .all()
         )
 
