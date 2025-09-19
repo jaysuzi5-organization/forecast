@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from framework.db import get_db
 from models.forecast import Forecast, ForecastCreate
@@ -17,6 +18,35 @@ def serialize_sqlalchemy_obj(obj):
         dict: Dictionary containing all column names and their values.
     """
     return {column.name: getattr(obj, column.name) for column in obj.__table__.columns}
+
+
+@router.get("/api/v1/forecast/latest")
+def get_latest_forecasts(
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieve the latest collected Forecast records.
+    Based on the maximum collection_time in the table.
+    """
+    try:
+        # Get the latest collection_time
+        latest_time = db.query(func.max(Forecast.collection_time)).scalar()
+
+        if not latest_time:
+            return []
+
+        # Get all forecasts with that collection_time
+        forecast_records = (
+            db.query(Forecast)
+            .filter(Forecast.collection_time == latest_time)
+            .order_by(Forecast.name)  # "order by 2" → assuming 2nd column is name
+            .all()
+        )
+
+        return [serialize_sqlalchemy_obj(item) for item in forecast_records]
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @router.get("/api/v1/forecast")

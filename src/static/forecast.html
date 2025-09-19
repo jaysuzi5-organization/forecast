@@ -1,31 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>forecast Test Page</title>
+  <title>Forecast Test Page</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>forecast Management</h1>
+  <h1>Forecast Management</h1>
 
-  <h2>Add forecast</h2>
+  <h2>Add Forecast</h2>
   <form id="forecastForm" autocomplete="off">
     <label>
-      User Name:
-      <input type="text" id="username" required>
+      Name:
+      <input type="text" id="name" required>
     </label>
     <label>
-      Full Name:
-      <input type="text" id="full_name" required>
+      Temperature:
+      <input type="number" id="temperature" step="0.1" required>
     </label>
     <label>
-      Email:
-      <input type="email" id="email" required>
+      Humidity:
+      <input type="number" id="humidity" step="0.1" required>
+    </label>
+    <label>
+      Description:
+      <input type="text" id="description">
     </label>
     <button type="submit">Add</button>
   </form>
   <div id="responseMessage"></div>
 
-  <h2>forecast List</h2>
+  <h2>Forecast List</h2>
 
   <div id="paginationControls" aria-label="Pagination controls">
     <button id="prevPage" disabled>Previous</button>
@@ -44,7 +48,15 @@
 
   <table id="forecastTable" aria-label="forecast list table">
     <thead>
-      <tr><th>ID</th><th>forecast Name</th><th>Email</th><th>Full Name</th><th>Create Date</th><th>Update Date</th></tr>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Temperature</th>
+        <th>Humidity</th>
+        <th>Description</th>
+        <th>Create Date</th>
+        <th>Update Date</th>
+      </tr>
     </thead>
     <tbody></tbody>
   </table>
@@ -60,7 +72,6 @@
 
     let currentPage = 1;
 
-    // Always read pageSize dynamically before load_forecast
     function getPageSize() {
       return Number(pageSizeSelect.value);
     }
@@ -81,7 +92,6 @@
         tbody.innerHTML = '';
 
         if (data.length === 0 && page > 1) {
-          // No data on requested page - go back one page and reload
           currentPage = page - 1;
           updatePaginationButtons();
           load_forecast(currentPage);
@@ -92,9 +102,10 @@
           tbody.innerHTML += `
             <tr>
               <td>${forecast.id}</td>
-              <td>${forecast.username}</td>
-              <td>${forecast.email}</td>
-              <td>${forecast.full_name ?? ''}</td>
+              <td>${forecast.name}</td>
+              <td>${forecast.temperature ?? ''}</td>
+              <td>${forecast.humidity ?? ''}</td>
+              <td>${forecast.description ?? ''}</td>
               <td>${forecast.create_date ? new Date(forecast.create_date).toLocaleString() : ''}</td>
               <td>${forecast.update_date ? new Date(forecast.update_date).toLocaleString() : ''}</td>
             </tr>
@@ -113,23 +124,20 @@
 
     function updatePaginationButtons() {
       prevPageBtn.disabled = currentPage <= 1;
-      // Next button is always enabled as before
     }
 
-    // Prev button handler
     prevPageBtn.addEventListener('click', () => {
       if (currentPage > 1) {
         load_forecast(currentPage - 1);
       }
     });
 
-    // Next button handler
     nextPageBtn.addEventListener('click', () => {
       load_forecast(currentPage + 1);
     });
 
     pageSizeSelect.addEventListener('change', () => {
-      currentPage = 1;  // reset to first page on page size change
+      currentPage = 1;
       load_forecast(currentPage);
     });
 
@@ -138,14 +146,15 @@
       responseMessage.textContent = '';
       responseMessage.className = '';
 
-      const username = document.getElementById('username').value.trim();
-      const full_name = document.getElementById('full_name').value.trim();
-      const email = document.getElementById('email').value.trim();
+      const name = document.getElementById('name').value.trim();
+      const temperature = parseFloat(document.getElementById('temperature').value);
+      const humidity = parseFloat(document.getElementById('humidity').value);
+      const description = document.getElementById('description').value.trim();
 
       fetch(apiBase, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, full_name, email })
+        body: JSON.stringify({ name, temperature, humidity, description })
       })
       .then(async res => {
         const contentType = res.headers.get('content-type') || '';
@@ -160,7 +169,7 @@
           responseMessage.textContent = `Error ${res.status}: ` + (typeof data === 'string' ? data : JSON.stringify(data));
           responseMessage.classList.add('error');
         } else {
-          responseMessage.textContent = `Success ${res.status}: forecast added.`;
+          responseMessage.textContent = `Success ${res.status}: Forecast added.`;
           responseMessage.classList.add('success');
           document.getElementById('forecastForm').reset();
           load_forecast(currentPage);
@@ -172,7 +181,6 @@
       });
     });
 
-    // Initial load
     load_forecast(currentPage);
   </script>
 </body>
